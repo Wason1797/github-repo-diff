@@ -1,10 +1,22 @@
 import asyncio
+from argparse import ArgumentParser
 
 import httpx
+from github_repo_diff.comparator import (build_file_tree, compare_file_trees,
+                                         make_row)
+from github_repo_diff.downloader import (configure_dirs, download_repo,
+                                         unzip_repo)
 from prettytable import PrettyTable
 
-from .comparator import build_file_tree, compare_file_trees, make_row
-from .downloader import configure_dirs, download_repo, unzip_repo
+
+def get_args() -> tuple:
+    parser = ArgumentParser(description='Get a comparison percentage from two GitHub Forks')
+    parser.add_argument("-la", "--left_author", help="GitHub author for the left fork", type=str)
+    parser.add_argument("-ra", "--right_author", help="GitHub author for the right fork", type=str)
+    parser.add_argument("-r", "--repo", help="Name of the GitHub repo", type=str)
+    parser.add_argument("-o", "--out", help="Output path", type=str, default='./repo_dist')
+    args = parser.parse_args()
+    return args.left_author, args.right_author, args.repo, args.out
 
 
 async def main(left_author: str, rihgt_author: str, repo: str, path: str) -> None:
@@ -12,8 +24,8 @@ async def main(left_author: str, rihgt_author: str, repo: str, path: str) -> Non
     async with httpx.AsyncClient() as client:
 
         left_repo, right_repo = await asyncio.gather(*(
-            download_repo(client, left_author, repo, './dist'),
-            download_repo(client, rihgt_author, repo, './dist'),
+            download_repo(client, left_author, repo, path),
+            download_repo(client, rihgt_author, repo, path),
         ))
 
     left_repo_dir, right_repo_dir = unzip_repo(left_repo), unzip_repo(right_repo)
@@ -33,6 +45,6 @@ async def main(left_author: str, rihgt_author: str, repo: str, path: str) -> Non
     print(f'=> Average Similarity = {average_similarity:.2f}%')
 
 
-if __name__ == '__main__':
+def entry_point() -> None:
     configure_dirs()
-    asyncio.run(main('MarcoAguirre', 'AlanysRojas', 'python-pizza-planet', './dist'))
+    asyncio.run(main(*get_args()))

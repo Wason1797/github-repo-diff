@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 def configure_dirs() -> None:
-    os.makedirs('./dist', exist_ok=True)
+    os.makedirs('./repo_dist', exist_ok=True)
 
 
 async def download_repo(client: httpx.AsyncClient, author: str, repo: str, path: str) -> str:
